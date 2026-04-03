@@ -1035,7 +1035,7 @@ func (c *Reconciler) getTaskrunWorkspaces(ctx context.Context, pr *v1.PipelineRu
 	var err error
 	var workspaces []v1.WorkspaceBinding
 	var pipelinePVCWorkspaceName string
-	pipelineRunWorkspaces := make(map[string]v1.WorkspaceBinding)
+	pipelineRunWorkspaces := make(map[string]v1.WorkspaceBinding, len(pr.Spec.Workspaces))
 	for _, binding := range pr.Spec.Workspaces {
 		pipelineRunWorkspaces[binding.Name] = binding
 	}
@@ -1339,6 +1339,9 @@ func validateChildObjectsInPipelineRunStatus(ctx context.Context, prs v1.Pipelin
 // filterTaskRunsForPipelineRunStatus returns TaskRuns owned by the PipelineRun.
 func filterTaskRunsForPipelineRunStatus(logger *zap.SugaredLogger, pr *v1.PipelineRun, trs []*v1.TaskRun) []*v1.TaskRun {
 	var ownedTaskRuns []*v1.TaskRun
+	if len(trs) > 0 {
+		ownedTaskRuns = make([]*v1.TaskRun, 0, len(trs))
+	}
 
 	for _, tr := range trs {
 		// Only process TaskRuns that are owned by this PipelineRun.
@@ -1359,6 +1362,12 @@ func filterCustomRunsForPipelineRunStatus(logger *zap.SugaredLogger, pr *v1.Pipe
 	var taskLabels []string
 	var gvks []schema.GroupVersionKind
 	var statuses []*v1beta1.CustomRunStatus
+	if len(customRuns) > 0 {
+		names = make([]string, 0, len(customRuns))
+		taskLabels = make([]string, 0, len(customRuns))
+		gvks = make([]schema.GroupVersionKind, 0, len(customRuns))
+		statuses = make([]*v1beta1.CustomRunStatus, 0, len(customRuns))
+	}
 
 	// Loop over all the customRuns associated to Tasks
 	for _, cr := range customRuns {
@@ -1388,7 +1397,7 @@ func updatePipelineRunStatusFromChildRefs(logger *zap.SugaredLogger, pr *v1.Pipe
 	}
 
 	// Map PipelineTask names to TaskRun child references that were already in the status
-	childRefByName := make(map[string]*v1.ChildStatusReference)
+	childRefByName := make(map[string]*v1.ChildStatusReference, len(pr.Status.ChildReferences))
 
 	for i := range pr.Status.ChildReferences {
 		childRefByName[pr.Status.ChildReferences[i].Name] = &pr.Status.ChildReferences[i]
@@ -1445,6 +1454,9 @@ func updatePipelineRunStatusFromChildRefs(logger *zap.SugaredLogger, pr *v1.Pipe
 	}
 
 	var newChildRefs []v1.ChildStatusReference
+	if len(childRefByName) > 0 {
+		newChildRefs = make([]v1.ChildStatusReference, 0, len(childRefByName))
+	}
 	for k := range childRefByName {
 		newChildRefs = append(newChildRefs, *childRefByName[k])
 	}
