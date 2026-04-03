@@ -312,16 +312,17 @@ func removeDuplicateResults(taskRunResult []v1.TaskRunResult) []v1.TaskRunResult
 		return nil
 	}
 
-	uniq := make([]v1.TaskRunResult, 0)
-	latest := make(map[string]v1.TaskRunResult, 0)
+	// Pre-allocate capacity to avoid dynamic resizing and use a map of index
+	// instead of copying the full struct to reduce memory overhead.
+	uniq := make([]v1.TaskRunResult, 0, len(taskRunResult))
+	latest := make(map[string]int, len(taskRunResult))
 	for _, res := range taskRunResult {
-		if _, seen := latest[res.Name]; !seen {
+		if idx, seen := latest[res.Name]; !seen {
+			latest[res.Name] = len(uniq)
 			uniq = append(uniq, res)
+		} else {
+			uniq[idx] = res
 		}
-		latest[res.Name] = res
-	}
-	for i, res := range uniq {
-		uniq[i] = latest[res.Name]
 	}
 	return uniq
 }

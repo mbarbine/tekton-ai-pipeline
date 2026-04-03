@@ -27,6 +27,22 @@ import (
 	"knative.dev/pkg/apis"
 )
 
+var regexCache sync.Map
+
+// getCachedRegex retrieves a compiled regular expression from the cache or
+// compiles and caches it if it's not present. This prevents redundant compilation of regexes.
+func getCachedRegex(pattern string) (*regexp.Regexp, error) {
+	if val, ok := regexCache.Load(pattern); ok {
+		return val.(*regexp.Regexp), nil
+	}
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	regexCache.Store(pattern, re)
+	return re, nil
+}
+
 const (
 	parameterSubstitution = `.*?(\[\*\])?`
 
