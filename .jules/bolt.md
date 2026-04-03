@@ -1,3 +1,3 @@
-## 2024-05-18 - Slice nil strictness in Tekton pipeline tests
-**Learning:** Tekton pipeline test suite contains strict strict assertions around `nil` slice equality for `ChildStatusReference` and `TaskRun` slice slices. Using `make([]T, 0, len)` unconditionally instead of keeping `var x []T` will cause test failures because it initializes an empty slice rather than `nil`.
-**Action:** Always conditionally allocate slice capacities using `if len(items) > 0 { x = make([]T, 0, len(items)) }` when replacing `var x []T` declarations in this codebase to preserve `nil` behaviors.
+## 2026-04-03 - Avoid map allocation for regex subexp indices
+**Learning:** In Go, looking up regex subexpressions by name using a map created from `pattern.SubexpNames()` is much slower and uses more memory than querying the indices once with `SubexpIndex(name)` and directly indexing the match array. The benchmark shows it is nearly an order of magnitude faster and avoids multiple small map allocations.
+**Action:** When extracting multiple named subexpressions repeatedly from matches, use `SubexpIndex` on the compiled regexp and index into the match slice directly instead of creating an intermediate dictionary mapping of group names to matched strings.
