@@ -21,10 +21,27 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"knative.dev/pkg/apis"
 )
+
+var regexCache sync.Map
+
+// getCachedRegex retrieves a compiled regular expression from the cache or
+// compiles and caches it if it's not present. This prevents redundant compilation of regexes.
+func getCachedRegex(pattern string) (*regexp.Regexp, error) {
+	if val, ok := regexCache.Load(pattern); ok {
+		return val.(*regexp.Regexp), nil
+	}
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	regexCache.Store(pattern, re)
+	return re, nil
+}
 
 const (
 	parameterSubstitution = `.*?(\[\*\])?`
@@ -179,7 +196,7 @@ func ValidateWholeArrayOrObjectRefInStringVariable(name, value, prefix string, v
 
 	// a regex to check if the stringValue is an isolated reference to the whole array/object param without extra string literal.
 	isolatedVariablePattern := fmt.Sprintf(fmt.Sprintf("^%s$", braceMatchingRegex), prefix, nameSubstitution, nameSubstitution, nameSubstitution)
-	isolatedVariableRegex, err := regexp.Compile(isolatedVariablePattern)
+	isolatedVariableRegex, err := getCachedRegex(isolatedVariablePattern)
 	if err != nil {
 		return false, &apis.FieldError{
 			Message: fmt.Sprint("Fail to parse the regex: ", err),
@@ -198,7 +215,7 @@ func ValidateWholeArrayOrObjectRefInStringVariable(name, value, prefix string, v
 // Returns "" if nothing is found.
 func extractExpressionFromString(s, prefix string) (string, error) {
 	pattern := fmt.Sprintf(braceMatchingRegex, prefix, parameterSubstitution, parameterSubstitution, parameterSubstitution)
-	re, err := regexp.Compile(pattern)
+	re, err := getCachedRegex(pattern)
 	if err != nil {
 		return "", err
 	}
@@ -215,7 +232,7 @@ func extractExpressionFromString(s, prefix string) (string, error) {
 // If the string does not contain the input prefix then the output will contain a slice of strings with length 0.
 func ExtractVariablesFromString(s, prefix string) ([]string, bool, string) {
 	pattern := fmt.Sprintf(braceMatchingRegex, prefix, parameterSubstitution, parameterSubstitution, parameterSubstitution)
-	re, err := regexp.Compile(pattern)
+	re, err := getCachedRegex(pattern)
 	if err != nil {
 		return nil, false, ""
 	}
@@ -256,7 +273,7 @@ func ExtractVariablesFromString(s, prefix string) ([]string, bool, string) {
 // extractEntireVariablesFromString returns any references to entire array or object params in s with the given prefix
 func extractEntireVariablesFromString(s, prefix string) ([]string, error) {
 	pattern := fmt.Sprintf(braceMatchingRegex, prefix, parameterSubstitution, parameterSubstitution, parameterSubstitution)
-	re, err := regexp.Compile(pattern)
+	re, err := getCachedRegex(pattern)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse regex pattern: %w", err)
 	}
