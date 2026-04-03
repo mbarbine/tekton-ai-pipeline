@@ -65,7 +65,6 @@ var paramIndexingRegex = regexp.MustCompile(paramIndexing)
 // intIndexRegex will match all `[int]` for param expression
 var intIndexRegex = regexp.MustCompile(intIndex)
 
-var regexCache sync.Map
 var isolatedRegexCache sync.Map
 
 // getRegexForPrefix returns a compiled regexp for the given prefix, using a cache to avoid recompiling it
@@ -269,11 +268,18 @@ func ExtractVariablesFromString(s, prefix string) ([]string, bool, string) {
 	if len(matches) == 0 {
 		return []string{}, false, ""
 	}
+
+	idx1 := re.SubexpIndex("var1")
+	idx2 := re.SubexpIndex("var2")
+	idx3 := re.SubexpIndex("var3")
+
 	vars := make([]string, len(matches))
 	for i, match := range matches {
-		groups := matchGroups(match, re)
-		for j, v := range []string{"var1", "var2", "var3"} {
-			val := groups[v]
+		for j, idx := range []int{idx1, idx2, idx3} {
+			if idx < 0 || idx >= len(match) {
+				continue
+			}
+			val := match[idx]
 			// If using the dot notation, the number of dot-separated components is restricted up to 2.
 			// Valid Examples:
 			//  - extract "aString" from <prefix>.aString
@@ -308,14 +314,21 @@ func extractEntireVariablesFromString(s, prefix string) ([]string, error) {
 	if len(matches) == 0 {
 		return []string{}, nil
 	}
+
+	idx1 := re.SubexpIndex("var1")
+	idx2 := re.SubexpIndex("var2")
+	idx3 := re.SubexpIndex("var3")
+
 	vars := make([]string, len(matches))
 	for i, match := range matches {
-		groups := matchGroups(match, re)
 		// foo -> foo
 		// foo.bar -> foo.bar
 		// foo.bar.baz -> foo.bar.baz
-		for _, v := range []string{"var1", "var2", "var3"} {
-			val := groups[v]
+		for _, idx := range []int{idx1, idx2, idx3} {
+			if idx < 0 || idx >= len(match) {
+				continue
+			}
+			val := match[idx]
 			if val != "" {
 				vars[i] = val
 				break
@@ -323,14 +336,6 @@ func extractEntireVariablesFromString(s, prefix string) ([]string, error) {
 		}
 	}
 	return vars, nil
-}
-
-func matchGroups(matches []string, pattern *regexp.Regexp) map[string]string {
-	groups := make(map[string]string)
-	for i, name := range pattern.SubexpNames()[1:] {
-		groups[name] = matches[i+1]
-	}
-	return groups
 }
 
 // ApplyReplacements returns a string with references to parameters replaced,
