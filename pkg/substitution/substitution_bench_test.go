@@ -5,17 +5,19 @@ import (
 )
 
 func BenchmarkExtractVariablesFromString(b *testing.B) {
-	input := "echo $(params.foo) $(params.bar) $(params.baz) $(params.qux) $(params.quux)"
+	s := "$(params.foo) $(params.bar) $(params.baz)"
+	prefix := "params"
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ExtractVariablesFromString(input, "params")
+		ExtractVariablesFromString(s, prefix)
 	}
 }
 
 func BenchmarkExtractEntireVariablesFromString(b *testing.B) {
-	input := "echo $(params.foo) $(params.bar) $(params.baz) $(params.qux) $(params.quux)"
+	s := "$(params.foo) $(params.bar) $(params.baz)"
+	prefix := "params"
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		extractEntireVariablesFromString(input, "params")
+		extractEntireVariablesFromString(s, prefix)
 	}
 }
