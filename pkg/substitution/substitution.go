@@ -274,8 +274,9 @@ func ExtractVariablesFromString(s, prefix string) ([]string, bool, string) {
 	idx3 := re.SubexpIndex("var3")
 
 	vars := make([]string, len(matches))
+	indices := [3]int{idx1, idx2, idx3}
 	for i, match := range matches {
-		for j, idx := range []int{idx1, idx2, idx3} {
+		for j, idx := range indices {
 			if idx < 0 || idx >= len(match) {
 				continue
 			}
@@ -320,11 +321,12 @@ func extractEntireVariablesFromString(s, prefix string) ([]string, error) {
 	idx3 := re.SubexpIndex("var3")
 
 	vars := make([]string, len(matches))
+	indices := [3]int{idx1, idx2, idx3}
 	for i, match := range matches {
 		// foo -> foo
 		// foo.bar -> foo.bar
 		// foo.bar.baz -> foo.bar.baz
-		for _, idx := range []int{idx1, idx2, idx3} {
+		for _, idx := range indices {
 			if idx < 0 || idx >= len(match) {
 				continue
 			}
