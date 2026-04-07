@@ -287,7 +287,8 @@ func ExtractVariablesFromString(s, prefix string) ([]string, bool, string) {
 			// Invalid Examples:
 			//  - <prefix>.foo.bar.baz....
 			if j == 0 && strings.Contains(val, ".") {
-				if len(strings.Split(val, ".")) > 2 {
+				// Use strings.Count instead of strings.Split to avoid allocating a slice.
+				if strings.Count(val, ".") > 1 {
 					errString = fmt.Sprintf(`Invalid referencing of parameters in "%s"! Only two dot-separated components after the prefix "%s" are allowed.`, s, prefix)
 					return vars, true, errString
 				}
