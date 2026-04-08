@@ -286,13 +286,16 @@ func ExtractVariablesFromString(s, prefix string) ([]string, bool, string) {
 			//  - extract "anObject" from <prefix>.anObject.key
 			// Invalid Examples:
 			//  - <prefix>.foo.bar.baz....
-			if j == 0 && strings.Contains(val, ".") {
-				if len(strings.Split(val, ".")) > 2 {
+			if j == 0 {
+				if strings.Count(val, ".") > 1 {
 					errString = fmt.Sprintf(`Invalid referencing of parameters in "%s"! Only two dot-separated components after the prefix "%s" are allowed.`, s, prefix)
 					return vars, true, errString
 				}
-				vars[i] = strings.SplitN(val, ".", 2)[0]
-				break
+
+				if idx := strings.IndexByte(val, '.'); idx != -1 {
+					vars[i] = val[:idx]
+					break
+				}
 			}
 			if val != "" {
 				vars[i] = val
