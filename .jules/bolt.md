@@ -1,3 +1,3 @@
-## 2026-04-03 - Avoid map allocation for regex subexp indices
-**Learning:** In Go, looking up regex subexpressions by name using a map created from `pattern.SubexpNames()` is much slower and uses more memory than querying the indices once with `SubexpIndex(name)` and directly indexing the match array. The benchmark shows it is nearly an order of magnitude faster and avoids multiple small map allocations.
-**Action:** When extracting multiple named subexpressions repeatedly from matches, use `SubexpIndex` on the compiled regexp and index into the match slice directly instead of creating an intermediate dictionary mapping of group names to matched strings.
+## 2024-05-20 - Avoid strings.Split for line extraction
+**Learning:** `strings.Split` allocates a new slice containing all elements. When only the first element (or the rest of the string) is needed, this causes unnecessary heap allocations proportional to the number of elements (e.g., number of lines in a script).
+**Action:** Use `strings.IndexByte` and string slicing to find the first occurrence and extract prefixes or suffixes without allocating slices.

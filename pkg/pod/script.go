@@ -282,7 +282,14 @@ func checkWindowsRequirement(steps []v1.Step, sidecars []v1.Sidecar) bool {
 
 func extractWindowsScriptComponents(script string, fileName string) ([]string, []string, string, string) {
 	// Set the command to execute the correct script in the mounted volume.
-	shebangLine := strings.Split(script, "\n")[0]
+	var shebangLine string
+	nl := strings.IndexByte(script, '\n')
+	if nl == -1 {
+		shebangLine = script
+	} else {
+		shebangLine = script[:nl]
+	}
+
 	splitLine := strings.Split(shebangLine, " ")
 	var command, args []string
 	if len(splitLine) > 1 {
@@ -302,8 +309,11 @@ func extractWindowsScriptComponents(script string, fileName string) ([]string, [
 		// If no interpreter is specified then strip the shebang and
 		// create a .cmd file
 		fileName += ".cmd"
-		commandLines := strings.Split(script, "\n")[1:]
-		script = strings.Join(commandLines, "\n")
+		if nl != -1 && nl+1 < len(script) {
+			script = script[nl+1:]
+		} else {
+			script = ""
+		}
 		command = []string{fileName}
 		args = []string{}
 	}
